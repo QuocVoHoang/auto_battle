@@ -792,14 +792,10 @@ export class Game {
     const img = this.getCharacterImage(character);
 
     if (img) {
-      const size = character.radius * 2.8;
+      const height = character.radius * 3.2;
+      const width = height * (img.naturalWidth / img.naturalHeight);
 
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(character.x, character.y, character.radius * 0.9, 0, Math.PI * 2);
-      ctx.clip();
-      ctx.drawImage(img, character.x - size / 2, character.y - size / 2, size, size);
-      ctx.restore();
+      ctx.drawImage(img, character.x - width / 2, character.y - height / 2, width, height);
     } else {
       ctx.beginPath();
       ctx.arc(character.x, character.y, character.radius, 0, Math.PI * 2);
@@ -829,7 +825,7 @@ export class Game {
     const width = Math.max(72, character.radius * 2.2);
     const height = 8;
     const x = character.x - width / 2;
-    const y = character.y - character.radius - 24;
+    const y = character.y - character.radius - 38;
     const healthRatio = character.health / character.maxHealth;
 
     ctx.fillStyle = '#2a3652';
@@ -848,7 +844,7 @@ export class Game {
     const width = Math.max(72, character.radius * 2.2);
     const height = 5;
     const x = character.x - width / 2;
-    const y = character.y - character.radius - 13;
+    const y = character.y - character.radius - 27;
 
     ctx.fillStyle = '#2a3652';
     ctx.fillRect(x, y, width, height);
