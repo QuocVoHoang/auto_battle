@@ -8,8 +8,6 @@ export const thief: CharacterConfig = {
   speed: 230,
   radius: 25,
   description: 'Fastest fighter with low health, quick punches, and a rock that causes small knockback.',
-  color: '#b066ff',
-  accentColor: '#9b7653',
   image: 'assets/characters/thief.png',
   normalAttack: {
     name: 'Punch',

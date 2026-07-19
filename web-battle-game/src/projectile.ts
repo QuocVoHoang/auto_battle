@@ -54,9 +54,11 @@ export class Projectile implements CircleBody {
   draw(ctx: CanvasRenderingContext2D): void {
     ctx.save();
 
-    if (this.img) {
-      const size = this.radius * 2;
-      ctx.drawImage(this.img, this.x - this.radius, this.y - this.radius, size, size);
+    if (this.img?.complete && this.img.naturalWidth > 0) {
+      const height = this.radius * 2;
+      const width = height * (this.img.naturalWidth / this.img.naturalHeight);
+
+      ctx.drawImage(this.img, this.x - width / 2, this.y - height / 2, width, height);
       ctx.restore();
       return;
     }

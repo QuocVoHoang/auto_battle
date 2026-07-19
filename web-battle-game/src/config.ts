@@ -12,6 +12,7 @@ export const GAME_STATES = {
 
 export const CHARACTER_IDS = {
   cr7: 'cr7',
+  messi: 'messi',
   firefighter: 'firefighter',
   police: 'police',
   thief: 'thief',

@@ -3,6 +3,8 @@ import { characterConfigs } from './characters/index.js';
 import { mapConfigs } from './maps/index.js';
 import type { CharacterConfig, GameResult, GameSettings, RuntimeCharacter } from './types.js';
 
+const DEFAULT_MANA_COLOR = '#72d6ff';
+
 export function getCharacters(): CharacterConfig[] {
   return characterConfigs;
 }
@@ -26,7 +28,7 @@ export function createStartMenu(container: HTMLElement, characterList: HTMLEleme
     <div class="field">
       <label for="player-two">Player 2 character</label>
       <select id="player-two" aria-label="Select Player 2 character">
-        ${characterOptions(CHARACTER_IDS.firefighter)}
+        ${characterOptions(CHARACTER_IDS.messi)}
       </select>
     </div>
 
@@ -164,7 +166,7 @@ function characterOptions(selectedId: string): string {
 function characterCard(character: CharacterConfig): string {
   return `
     <article class="character-card" data-character-id="${character.id}">
-      <div class="character-avatar" style="--character-color: ${character.color}; --accent-color: ${character.accentColor}">
+      <div class="character-avatar">
         ${character.image ? `<img src="${character.image}" alt="">` : ''}
       </div>
       <h3>${character.name}</h3>
@@ -197,7 +199,7 @@ function matchStatusCard(character: RuntimeCharacter): string {
       <div class="match-meter">
         <span>Mana</span>
         <strong>${character.rage}/100</strong>
-        <div class="match-meter-track"><div class="match-meter-fill mana" style="width: ${manaRatio * 100}%; --mana-color: ${character.accentColor}"></div></div>
+        <div class="match-meter-track"><div class="match-meter-fill mana" style="width: ${manaRatio * 100}%; --mana-color: ${DEFAULT_MANA_COLOR}"></div></div>
       </div>
     </article>
   `;

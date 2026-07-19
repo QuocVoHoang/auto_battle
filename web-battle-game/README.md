@@ -94,7 +94,9 @@ web-battle-game/
 
 ## How to Add a New Character
 
-1. Create `src/characters/foo.ts`:
+1. Copy `src/characters/_template.ts` to `src/characters/foo.ts`.
+
+2. Rename the export and update fields:
 
 ```ts
 import type { CharacterConfig } from '../types.js';
@@ -104,8 +106,6 @@ export const foo: CharacterConfig = {
   name: 'Foo',
   description: 'Short description.',
   image: 'assets/characters/foo.png',
-  color: '#ff6600',
-  accentColor: '#ffaa00',
   maxHealth: 100,
   speed: 180,                   // px/s
   radius: 30,                   // px
@@ -128,16 +128,16 @@ export const foo: CharacterConfig = {
 };
 ```
 
-2. Import and add to `src/characters/index.ts`:
+3. Import and add to `src/characters/index.ts`:
 
 ```ts
 import { foo } from './foo.js';
-export const characterConfigs: CharacterConfig[] = [police, thief, firefighter, cowboy, cr7, foo];
+export const characterConfigs: CharacterConfig[] = [cr7, firefighter, police, thief, cowboy, foo];
 ```
 
-3. Add ID to `CHARACTER_IDS` in `src/config.ts` if you want a named constant.
+4. Add ID to `CHARACTER_IDS` in `src/config.ts` only if you want a named constant.
 
-4. Run `npm run build`. Character appears in start menu dropdowns and character cards automatically.
+5. Run `npm run build`. Character appears in start menu dropdowns and character cards automatically.
 
 ## How to Add a New Map
 

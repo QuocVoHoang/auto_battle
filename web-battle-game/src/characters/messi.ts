@@ -1,14 +1,14 @@
 import { CHARACTER_IDS } from '../config.js';
 import type { CharacterConfig } from '../types.js';
 
-export const cr7: CharacterConfig = {
-  id: CHARACTER_IDS.cr7,
-  name: 'CR7',
-  maxHealth: 1050,
-  speed: 190,
+export const messi: CharacterConfig = {
+  id: CHARACTER_IDS.messi,
+  name: 'Messi',
+  maxHealth: 800,
+  speed: 150,
   radius: 30,
-  description: 'G.O.A.T',
-  image: 'assets/characters/cr7_1.png',
+  description: 'Vice G.O.A.T',
+  image: 'assets/characters/messi_1.png',
   normalAttack: {
     name: 'Football Kick',
     damage: 50,
@@ -21,13 +21,14 @@ export const cr7: CharacterConfig = {
       knockback: 60,
       shape: 'circle',
       image: 'assets/skills/cr7_1.svg',
-      sound: 'assets/sounds/cr7_1.mp3',
+      sound: '',
     },
   },
   ultimateAttack: {
-    name: 'Siu',
+    name: 'Wo Wo',
     damage: 220,
-    avatarImage: 'assets/characters/cr7_2.png',
+    guaranteedHit: false,
+    avatarImage: 'assets/characters/messi_2.png',
     avatarDuration: 900,
     projectile: {
       speed: 500,
@@ -35,8 +36,8 @@ export const cr7: CharacterConfig = {
       color: '#f8f9fa',
       knockback: 60,
       shape: 'circle',
-      image: 'assets/skills/cr7_2.png',
-      sound: 'assets/sounds/cr7_2.mp3',
+      image: 'assets/skills/messi_2.png',
+      sound: 'assets/sounds/messi_2.mp3',
     },
   },
 };

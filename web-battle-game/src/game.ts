@@ -26,6 +26,11 @@ import type {
   Vector,
 } from './types.js';
 
+const FALLBACK_CHARACTER_COLOR = '#72d6ff';
+const FALLBACK_CHARACTER_ACCENT = '#ffcc66';
+const DEFAULT_MANA_COLOR = '#72d6ff';
+const DEFAULT_WINNER_COLOR = '#ffcc66';
+
 export class Game {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
@@ -494,7 +499,7 @@ export class Game {
     const direction = getDirection(character, target);
     const skill = character.ultimateAttack;
 
-    this.playSound(skill.sound);
+    this.playSound(skill.projectile?.sound);
 
     if (skill.avatarImage) {
       character.overrideImage = skill.avatarImage;
@@ -555,7 +560,7 @@ export class Game {
     const damageDealt = applyDamage(target, skill.damage);
     character.stats.totalDamageDealt += damageDealt;
     const knockback = skill.projectile?.knockback ?? 0;
-    const color = skill.projectile?.color ?? character.accentColor;
+    const color = skill.projectile?.color ?? DEFAULT_MANA_COLOR;
     this.applyKnockback(target, { knockback, velocityX: target.x - character.x, velocityY: target.y - character.y });
 
     this.effects.push({
@@ -751,20 +756,14 @@ export class Game {
 
   getProjectileImage(src: string): HTMLImageElement | null {
     if (this.projectileImages.has(src)) {
-      const img = this.projectileImages.get(src);
-
-      if (img?.complete && img.naturalWidth > 0) {
-        return img;
-      }
-
-      return null;
+      return this.projectileImages.get(src) ?? null;
     }
 
     const img = new Image();
     img.src = src;
     this.projectileImages.set(src, img);
 
-    return null;
+    return img;
   }
 
   playSound(src?: string): void {
@@ -799,12 +798,12 @@ export class Game {
     } else {
       ctx.beginPath();
       ctx.arc(character.x, character.y, character.radius, 0, Math.PI * 2);
-      ctx.fillStyle = character.color;
+      ctx.fillStyle = FALLBACK_CHARACTER_COLOR;
       ctx.fill();
 
       ctx.beginPath();
       ctx.arc(character.x, character.y, character.radius * 0.45, 0, Math.PI * 2);
-      ctx.fillStyle = character.accentColor;
+      ctx.fillStyle = FALLBACK_CHARACTER_ACCENT;
       ctx.globalAlpha = 0.55;
       ctx.fill();
       ctx.globalAlpha = 1;
@@ -849,7 +848,7 @@ export class Game {
     ctx.fillStyle = '#2a3652';
     ctx.fillRect(x, y, width, height);
 
-    ctx.fillStyle = character.accentColor;
+    ctx.fillStyle = DEFAULT_MANA_COLOR;
     ctx.fillRect(x, y, width * (character.rage / 100), height);
   }
 
@@ -900,7 +899,7 @@ export class Game {
 
     if (winner) {
       ctx.font = 'bold 26px Arial';
-      ctx.fillStyle = winner.accentColor;
+      ctx.fillStyle = DEFAULT_WINNER_COLOR;
       ctx.fillText(`${winner.name} wins!`, canvas.width / 2, canvas.height / 2 + 20);
     }
   }

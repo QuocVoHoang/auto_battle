@@ -190,7 +190,7 @@ select:focus-visible {
   width: 44px;
   height: 44px;
   overflow: hidden;
-  background: var(--character-color);
+  background: #101623;
   border-radius: 50%;
 }
 

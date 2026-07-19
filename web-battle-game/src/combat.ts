@@ -1,5 +1,7 @@
 import type { Effect, RuntimeCharacter } from './types.js';
 
+const DEFAULT_HIT_COLOR = '#ffffff';
+
 export function handleContactAttacks(attacker: RuntimeCharacter, defender: RuntimeCharacter, time: number, effects: Effect[]): number {
   if (attacker.health <= 0 || defender.health <= 0 || time < attacker.nextAttackTime) {
     return 0;
@@ -22,7 +24,7 @@ export function handleContactAttacks(attacker: RuntimeCharacter, defender: Runti
     y: defender.y - defender.radius,
     age: 0,
     duration: 0.6,
-    color: attacker.color,
+    color: DEFAULT_HIT_COLOR,
   });
 
   return damageDealt;

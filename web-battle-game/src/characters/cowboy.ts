@@ -8,8 +8,6 @@ export const cowboy: CharacterConfig = {
   speed: 155,
   radius: 30,
   description: 'Ranged fighter with low-damage pistol shots from distance. Calls a train for devastating damage.',
-  color: '#8B4513',
-  accentColor: '#D2B48C',
   image: 'assets/characters/cowboy.svg',
   normalAttack: {
     name: 'Pistol Shot',

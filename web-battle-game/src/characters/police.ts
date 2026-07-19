@@ -8,8 +8,6 @@ export const police: CharacterConfig = {
   speed: 170,
   radius: 30,
   description: 'Balanced fighter with medium baton damage and a fast, accurate pistol shot.',
-  color: '#4f8cff',
-  accentColor: '#ffe066',
   image: 'assets/characters/police.png',
   normalAttack: {
     name: 'Baton Strike',

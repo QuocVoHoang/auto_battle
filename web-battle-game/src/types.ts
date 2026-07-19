@@ -64,7 +64,6 @@ export interface UltimateAttackConfig {
   damage: number;
   projectile?: ProjectileConfig;
   guaranteedHit?: boolean;
-  sound?: string;
   avatarImage?: string;
   avatarDuration?: number;
 }
@@ -76,8 +75,6 @@ export interface CharacterConfig {
   speed: number;
   radius: number;
   description: string;
-  color: string;
-  accentColor: string;
   image?: string;
   normalAttack: AttackConfig;
   ultimateAttack: UltimateAttackConfig;

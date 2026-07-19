@@ -8,8 +8,6 @@ export const firefighter: CharacterConfig = {
   speed: 135,
   radius: 36,
   description: 'Largest and toughest fighter. Slow movement, medium spray damage, huge knockback blast.',
-  color: '#ff5a4f',
-  accentColor: '#66d9ff',
   image: 'assets/characters/firefighter.png',
   normalAttack: {
     name: 'Water Spray',
