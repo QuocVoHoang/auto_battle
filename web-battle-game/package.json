@@ -1,0 +1,12 @@
+{
+  "name": "web-battle-game",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "npm run build && python3 -m http.server 8080"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4"
+  }
+}

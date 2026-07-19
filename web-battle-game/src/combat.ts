@@ -1,4 +1,6 @@
-export function handleContactAttacks(attacker, defender, time, effects) {
+import type { Effect, RuntimeCharacter } from './types.js';
+
+export function handleContactAttacks(attacker: RuntimeCharacter, defender: RuntimeCharacter, time: number, effects: Effect[]): number {
   if (attacker.health <= 0 || defender.health <= 0 || time < attacker.nextAttackTime) {
     return 0;
   }
@@ -26,13 +28,13 @@ export function handleContactAttacks(attacker, defender, time, effects) {
   return damageDealt;
 }
 
-export function applyDamage(character, damage) {
+export function applyDamage(character: RuntimeCharacter, damage: number): number {
   const previousHealth = character.health;
   character.health = Math.max(0, character.health - damage);
 
   return previousHealth - character.health;
 }
 
-export function gainRage(character, amount) {
+export function gainRage(character: RuntimeCharacter, amount: number): void {
   character.rage = Math.min(100, character.rage + amount);
 }

@@ -1,5 +1,37 @@
-export class Projectile {
-  constructor({ x, y, velocityX, velocityY, radius, damage, owner, type, label, color, knockback = 0, shape = 'circle', img = null, isNormalAttack = false }) {
+import type { CircleBody, ProjectileShape } from './types.js';
+
+export interface ProjectileOptions extends CircleBody {
+  velocityX: number;
+  velocityY: number;
+  damage: number;
+  owner: string;
+  type: string;
+  label: string;
+  color: string;
+  knockback?: number;
+  shape?: ProjectileShape;
+  img?: HTMLImageElement | null;
+  isNormalAttack?: boolean;
+}
+
+export class Projectile implements CircleBody {
+  x: number;
+  y: number;
+  velocityX: number;
+  velocityY: number;
+  radius: number;
+  damage: number;
+  owner: string;
+  type: string;
+  label: string;
+  color: string;
+  knockback: number;
+  shape: ProjectileShape;
+  active: boolean;
+  img: HTMLImageElement | null;
+  isNormalAttack: boolean;
+
+  constructor({ x, y, velocityX, velocityY, radius, damage, owner, type, label, color, knockback = 0, shape = 'circle', img = null, isNormalAttack = false }: ProjectileOptions) {
     this.x = x;
     this.y = y;
     this.velocityX = velocityX;
@@ -17,12 +49,12 @@ export class Projectile {
     this.isNormalAttack = isNormalAttack;
   }
 
-  update(deltaTime) {
+  update(deltaTime: number): void {
     this.x += this.velocityX * deltaTime;
     this.y += this.velocityY * deltaTime;
   }
 
-  draw(ctx) {
+  draw(ctx: CanvasRenderingContext2D): void {
     ctx.save();
 
     if (this.img) {

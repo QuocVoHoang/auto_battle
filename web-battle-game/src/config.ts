@@ -8,12 +8,7 @@ export const GAME_STATES = {
   MENU: 'MENU',
   PLAYING: 'PLAYING',
   GAME_OVER: 'GAME_OVER',
-};
-
-export const ARENA_SHAPES = {
-  square: 'Square Arena',
-  circle: 'Circular Arena',
-};
+} as const;
 
 export const CHARACTER_IDS = {
   police: 'police',
@@ -21,4 +16,4 @@ export const CHARACTER_IDS = {
   firefighter: 'firefighter',
   cowboy: 'cowboy',
   cr7: 'cr7',
-};
+} as const;

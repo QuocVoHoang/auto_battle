@@ -1,23 +1,23 @@
-import { ARENA_PADDING } from './config.js';
+import type { ArenaBounds, CircleBody, MapConfig, Vector } from './types.js';
 
-export function getArenaBounds(canvas, shape) {
+export function getArenaBounds(canvas: HTMLCanvasElement, map: MapConfig): ArenaBounds {
   const center = {
     x: canvas.width / 2,
     y: canvas.height / 2,
   };
 
-  const size = Math.min(canvas.width, canvas.height) - ARENA_PADDING * 2;
+  const size = Math.min(canvas.width, canvas.height) - map.padding * 2;
 
-  if (shape === 'circle') {
+  if (map.shape === 'circle') {
     return {
-      shape,
+      shape: 'circle',
       center,
       radius: size / 2,
     };
   }
 
   return {
-    shape,
+    shape: 'square',
     center,
     left: center.x - size / 2,
     right: center.x + size / 2,
@@ -27,8 +27,8 @@ export function getArenaBounds(canvas, shape) {
   };
 }
 
-export function drawArena(ctx, canvas, shape) {
-  const arena = getArenaBounds(canvas, shape);
+export function drawArena(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, map: MapConfig): void {
+  const arena = getArenaBounds(canvas, map);
 
   ctx.save();
   ctx.strokeStyle = '#72d6ff';
@@ -45,7 +45,7 @@ export function drawArena(ctx, canvas, shape) {
   ctx.restore();
 }
 
-export function isInsideArena(character, arena) {
+export function isInsideArena(character: CircleBody, arena: ArenaBounds): boolean {
   if (arena.shape === 'circle') {
     const dx = character.x - arena.center.x;
     const dy = character.y - arena.center.y;
@@ -62,7 +62,7 @@ export function isInsideArena(character, arena) {
   );
 }
 
-export function correctCharacterPosition(character, arena) {
+export function correctCharacterPosition<T extends CircleBody>(character: T, arena: ArenaBounds): T {
   if (arena.shape === 'circle') {
     const dx = character.x - arena.center.x;
     const dy = character.y - arena.center.y;
@@ -87,7 +87,7 @@ export function correctCharacterPosition(character, arena) {
   return character;
 }
 
-export function getWallNormal(character, arena) {
+export function getWallNormal(character: CircleBody, arena: ArenaBounds): Vector {
   if (arena.shape === 'circle') {
     const dx = character.x - arena.center.x;
     const dy = character.y - arena.center.y;
@@ -106,7 +106,7 @@ export function getWallNormal(character, arena) {
   return distances.sort((a, b) => a.distance - b.distance)[0].normal;
 }
 
-export function getStartingPositions(arena, leftRadius, rightRadius) {
+export function getStartingPositions(arena: ArenaBounds, leftRadius: number, rightRadius: number): [CircleBody, CircleBody] {
   if (arena.shape === 'circle') {
     return [
       { x: arena.center.x - arena.radius * 0.45, y: arena.center.y, radius: leftRadius },
@@ -120,6 +120,6 @@ export function getStartingPositions(arena, leftRadius, rightRadius) {
   ];
 }
 
-function clamp(value, min, max) {
+function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }

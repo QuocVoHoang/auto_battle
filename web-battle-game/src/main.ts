@@ -1,18 +1,21 @@
 import { Game } from './game.js';
-import { createStartMenu, showGameOver, showPlayingUI, hideGameUI, renderMatchStatus } from './ui.js';
+import { createStartMenu, hideGameUI, renderMatchStatus, showGameOver, showPlayingUI } from './ui.js';
+import type { GameSettings } from './types.js';
 
-const canvas = document.querySelector('#game-canvas');
-const menu = document.querySelector('#start-menu');
-const characterList = document.querySelector('#character-list');
-const matchStatus = document.querySelector('#match-status');
+const canvas = requiredElement<HTMLCanvasElement>(document, '#game-canvas');
+const menu = requiredElement<HTMLElement>(document, '#start-menu');
+const characterList = requiredElement<HTMLElement>(document, '#character-list');
+const matchStatus = requiredElement<HTMLElement>(document, '#match-status');
 
-let lastSettings = null;
+let lastSettings: GameSettings | null = null;
 
 const game = new Game(canvas, {
   onGameOver: (result) => {
     hideGameUI(menu);
     showGameOver(menu, result, {
       onPlayAgain: () => {
+        if (!lastSettings) return;
+
         game.start(lastSettings);
         showPlayingUI(menu, {
           onPause: () => game.togglePause(),
@@ -45,7 +48,7 @@ const game = new Game(canvas, {
   onStatusChange: (characters) => renderMatchStatus(matchStatus, characters),
 });
 
-function renderMenu() {
+function renderMenu(): void {
   hideGameUI(menu);
   renderMatchStatus(matchStatus);
   createStartMenu(menu, characterList, {
@@ -62,9 +65,19 @@ function renderMenu() {
   });
 }
 
-function stopGame() {
+function stopGame(): void {
   game.returnToMenu();
   renderMenu();
+}
+
+function requiredElement<T extends Element>(parent: ParentNode, selector: string): T {
+  const element = parent.querySelector<T>(selector);
+
+  if (!element) {
+    throw new Error(`Missing element: ${selector}`);
+  }
+
+  return element;
 }
 
 window.addEventListener('resize', () => game.render());

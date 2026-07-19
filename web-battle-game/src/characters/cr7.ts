@@ -1,6 +1,7 @@
 import { CHARACTER_IDS } from '../config.js';
+import type { CharacterConfig } from '../types.js';
 
-export const cr7 = {
+export const cr7: CharacterConfig = {
   id: CHARACTER_IDS.cr7,
   name: 'CR7',
   maxHealth: 1050,

@@ -1,4 +1,6 @@
-export function circlesOverlap(a, b) {
+import type { CircleBody, MovingCircleBody } from './types.js';
+
+export function circlesOverlap(a: CircleBody, b: CircleBody): boolean {
   const dx = a.x - b.x;
   const dy = a.y - b.y;
   const distanceSquared = dx * dx + dy * dy;
@@ -7,7 +9,7 @@ export function circlesOverlap(a, b) {
   return distanceSquared <= radiusSum * radiusSum;
 }
 
-export function resolveCharacterCollision(a, b) {
+export function resolveCharacterCollision(a: MovingCircleBody, b: MovingCircleBody): boolean {
   const dx = b.x - a.x;
   const dy = b.y - a.y;
   const distance = Math.hypot(dx, dy);

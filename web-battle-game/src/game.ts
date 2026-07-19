@@ -10,12 +10,54 @@ import {
 import { getCharacterConfig } from './characters/index.js';
 import { applyDamage, gainRage, handleContactAttacks } from './combat.js';
 import { circlesOverlap } from './collision.js';
+import { getMapConfig, mapConfigs } from './maps/index.js';
 import { Projectile } from './projectile.js';
+import type {
+  ArenaBounds,
+  CharacterConfig,
+  CircleBody,
+  Effect,
+  GameCallbacks,
+  GameSettings,
+  GameState,
+  MapConfig,
+  RuntimeCharacter,
+  SpecialConfig,
+  Vector,
+} from './types.js';
 
 export class Game {
-  constructor(canvas, { onGameOver, onPauseToggle, onMuteToggle, onStatusChange } = {}) {
+  canvas: HTMLCanvasElement;
+  ctx: CanvasRenderingContext2D;
+  onGameOver?: GameCallbacks['onGameOver'];
+  onPauseToggle?: GameCallbacks['onPauseToggle'];
+  onMuteToggle?: GameCallbacks['onMuteToggle'];
+  onStatusChange?: GameCallbacks['onStatusChange'];
+  state: GameState;
+  paused: boolean;
+  muted: boolean;
+  settings: GameSettings | null;
+  characters: RuntimeCharacter[];
+  projectiles: Projectile[];
+  effects: Effect[];
+  shakeX: number;
+  shakeY: number;
+  shakeIntensity: number;
+  animationFrameId: number | null;
+  lastFrameTime: number;
+  characterImages: Map<string, HTMLImageElement>;
+  projectileImages: Map<string, HTMLImageElement>;
+  sounds: Map<string, HTMLAudioElement>;
+
+  constructor(canvas: HTMLCanvasElement, { onGameOver, onPauseToggle, onMuteToggle, onStatusChange }: GameCallbacks = {}) {
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx) {
+      throw new Error('Canvas 2D context is not available.');
+    }
+
     this.canvas = canvas;
-    this.ctx = canvas.getContext('2d');
+    this.ctx = ctx;
     this.onGameOver = onGameOver;
     this.onPauseToggle = onPauseToggle;
     this.onMuteToggle = onMuteToggle;
@@ -37,12 +79,10 @@ export class Game {
     this.sounds = new Map();
   }
 
-  start(settings) {
-    if (!settings) {
-      return;
-    }
+  start(settings: GameSettings): void {
+    const map = getMapConfig(settings.arenaShape);
 
-    if (!getCharacterConfig(settings.playerOne) || !getCharacterConfig(settings.playerTwo)) {
+    if (!map || !getCharacterConfig(settings.playerOne) || !getCharacterConfig(settings.playerTwo)) {
       return;
     }
 
@@ -64,7 +104,7 @@ export class Game {
     this.startLoop();
   }
 
-  returnToMenu() {
+  returnToMenu(): void {
     this.stopLoop();
     this.state = GAME_STATES.MENU;
     this.paused = false;
@@ -79,7 +119,7 @@ export class Game {
     this.draw();
   }
 
-  togglePause() {
+  togglePause(): void {
     if (this.state !== GAME_STATES.PLAYING) {
       return;
     }
@@ -90,36 +130,29 @@ export class Game {
       this.lastFrameTime = performance.now();
     }
 
-    if (this.onPauseToggle) {
-      this.onPauseToggle(this.paused);
-    }
+    this.onPauseToggle?.(this.paused);
   }
 
-  toggleMute() {
+  toggleMute(): void {
     this.muted = !this.muted;
-
-    if (this.onMuteToggle) {
-      this.onMuteToggle(this.muted);
-    }
+    this.onMuteToggle?.(this.muted);
   }
 
-  render() {
+  render(): void {
     this.draw();
   }
 
-  notifyStatusChange() {
-    if (this.onStatusChange) {
-      this.onStatusChange(this.characters);
-    }
+  notifyStatusChange(): void {
+    this.onStatusChange?.(this.characters);
   }
 
-  startLoop() {
+  startLoop(): void {
     this.stopLoop();
     this.lastFrameTime = performance.now();
     this.animationFrameId = requestAnimationFrame((time) => this.loop(time));
   }
 
-  stopLoop() {
+  stopLoop(): void {
     if (!this.animationFrameId) {
       return;
     }
@@ -128,7 +161,7 @@ export class Game {
     this.animationFrameId = null;
   }
 
-  loop(time) {
+  loop(time: number): void {
     if (this.state !== GAME_STATES.PLAYING) {
       this.animationFrameId = null;
       return;
@@ -150,7 +183,7 @@ export class Game {
     }
   }
 
-  updateShake(deltaTime) {
+  updateShake(deltaTime: number): void {
     if (this.shakeIntensity <= 0) {
       return;
     }
@@ -160,7 +193,7 @@ export class Game {
     this.shakeIntensity = Math.max(0, this.shakeIntensity - deltaTime * 80);
   }
 
-  triggerShake(intensity) {
+  triggerShake(intensity: number): void {
     const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     if (prefersReduced) {
@@ -170,10 +203,17 @@ export class Game {
     this.shakeIntensity = Math.max(this.shakeIntensity, intensity);
   }
 
-  createCharacters() {
-    const arena = getArenaBounds(this.canvas, this.settings.arenaShape);
-    const left = getCharacterConfig(this.settings.playerOne);
-    const right = getCharacterConfig(this.settings.playerTwo);
+  createCharacters(): void {
+    const map = this.getCurrentMap();
+    const left = getCharacterConfig(this.settings?.playerOne ?? '');
+    const right = getCharacterConfig(this.settings?.playerTwo ?? '');
+
+    if (!left || !right) {
+      this.characters = [];
+      return;
+    }
+
+    const arena = getArenaBounds(this.canvas, map);
     const positions = getStartingPositions(arena, left.radius, right.radius);
 
     this.characters = [
@@ -182,7 +222,7 @@ export class Game {
     ].map((character) => correctCharacterPosition(character, arena));
   }
 
-  createCharacter(config, position, velocity) {
+  createCharacter(config: CharacterConfig, position: CircleBody, velocity: { velocityX: number; velocityY: number }): RuntimeCharacter {
     return {
       ...config,
       ...position,
@@ -200,12 +240,12 @@ export class Game {
     };
   }
 
-  update(deltaTime, time) {
+  update(deltaTime: number, time: number): void {
     if (this.state !== GAME_STATES.PLAYING) {
       return;
     }
 
-    const arena = getArenaBounds(this.canvas, this.settings.arenaShape);
+    const arena = getArenaBounds(this.canvas, this.getCurrentMap());
     this.updateTemporaryImages(time);
 
     for (const character of this.characters) {
@@ -223,6 +263,10 @@ export class Game {
     }
 
     const [left, right] = this.characters;
+
+    if (!left || !right) {
+      return;
+    }
 
     if (circlesOverlap(left, right)) {
       if (!left.normalRange) this.handleNormalAttack(left, right, time);
@@ -263,7 +307,7 @@ export class Game {
     this.updateEffects(deltaTime);
   }
 
-  handleNormalAttack(attacker, defender, time) {
+  handleNormalAttack(attacker: RuntimeCharacter, defender: RuntimeCharacter, time: number): void {
     const damageDealt = handleContactAttacks(attacker, defender, time, this.effects);
 
     if (damageDealt <= 0) {
@@ -284,7 +328,7 @@ export class Game {
     });
   }
 
-  handleRangedNormalAttack(attacker, defender, time) {
+  handleRangedNormalAttack(attacker: RuntimeCharacter, defender: RuntimeCharacter, time: number): void {
     if (attacker.normalProjectile) {
       this.fireNormalProjectile(attacker, defender, time);
       return;
@@ -312,8 +356,8 @@ export class Game {
     this.playSound(attacker.normalSound);
   }
 
-  fireNormalProjectile(attacker, defender, time) {
-    if (attacker.health <= 0 || defender.health <= 0 || time < attacker.nextAttackTime) {
+  fireNormalProjectile(attacker: RuntimeCharacter, defender: RuntimeCharacter, time: number): void {
+    if (attacker.health <= 0 || defender.health <= 0 || time < attacker.nextAttackTime || !attacker.normalProjectile) {
       return;
     }
 
@@ -343,7 +387,7 @@ export class Game {
     }));
   }
 
-  updateProjectiles(deltaTime, arena) {
+  updateProjectiles(deltaTime: number, arena: ArenaBounds): void {
     for (const projectile of this.projectiles) {
       projectile.update(deltaTime);
 
@@ -408,7 +452,7 @@ export class Game {
     this.projectiles = this.projectiles.filter((projectile) => projectile.active);
   }
 
-  addDamageToOwner(ownerId, damageDealt) {
+  addDamageToOwner(ownerId: string, damageDealt: number): void {
     const owner = this.characters.find((character) => character.id === ownerId);
 
     if (owner) {
@@ -416,7 +460,7 @@ export class Game {
     }
   }
 
-  addNormalHitToOwner(ownerId) {
+  addNormalHitToOwner(ownerId: string): void {
     const owner = this.characters.find((character) => character.id === ownerId);
 
     if (owner) {
@@ -424,8 +468,12 @@ export class Game {
     }
   }
 
-  activateReadySpecials(time) {
+  activateReadySpecials(time: number): void {
     const [left, right] = this.characters;
+
+    if (!left || !right) {
+      return;
+    }
 
     for (const character of this.characters) {
       if (character.health <= 0 || character.rage < 100) {
@@ -444,7 +492,7 @@ export class Game {
     }
   }
 
-  fireSpecial(character, target, time) {
+  fireSpecial(character: RuntimeCharacter, target: RuntimeCharacter, time: number): void {
     const direction = getDirection(character, target);
     const skill = character.special;
 
@@ -461,7 +509,6 @@ export class Game {
     }
 
     const spawnDistance = character.radius + skill.radius + 6;
-
     const projectileImg = skill.image ? this.getProjectileImage(skill.image) : null;
 
     this.projectiles.push(new Projectile({
@@ -501,7 +548,7 @@ export class Game {
     });
   }
 
-  applyGuaranteedSpecial(character, target, skill) {
+  applyGuaranteedSpecial(character: RuntimeCharacter, target: RuntimeCharacter, skill: SpecialConfig): void {
     const damageDealt = applyDamage(target, character.specialDamage);
     character.stats.totalDamageDealt += damageDealt;
     this.applyKnockback(target, { ...skill, velocityX: target.x - character.x, velocityY: target.y - character.y });
@@ -537,7 +584,7 @@ export class Game {
     });
   }
 
-  updateTemporaryImages(time) {
+  updateTemporaryImages(time: number): void {
     for (const character of this.characters) {
       if (character.overrideImage && time >= character.overrideImageUntil) {
         character.overrideImage = null;
@@ -546,7 +593,7 @@ export class Game {
     }
   }
 
-  endIfNeeded() {
+  endIfNeeded(): boolean {
     const loser = this.characters.find((character) => character.health <= 0);
 
     if (!loser) {
@@ -554,11 +601,16 @@ export class Game {
     }
 
     const winner = this.characters.find((character) => character !== loser);
+
+    if (!winner) {
+      return false;
+    }
+
     this.endGame(winner, loser);
     return true;
   }
 
-  endGame(winner, loser) {
+  endGame(winner: RuntimeCharacter, loser: RuntimeCharacter): void {
     this.state = GAME_STATES.GAME_OVER;
     this.stopLoop();
     this.projectiles = [];
@@ -566,16 +618,14 @@ export class Game {
     this.draw();
     this.notifyStatusChange();
 
-    if (this.onGameOver) {
-      this.onGameOver({
-        winner,
-        loser,
-        characters: this.characters,
-      });
-    }
+    this.onGameOver?.({
+      winner,
+      loser,
+      characters: this.characters,
+    });
   }
 
-  applyKnockback(character, projectile) {
+  applyKnockback(character: RuntimeCharacter, projectile: { knockback: number; velocityX: number; velocityY: number }): void {
     if (projectile.knockback <= 0 || this.state !== GAME_STATES.PLAYING) {
       return;
     }
@@ -588,7 +638,7 @@ export class Game {
     character.velocityY += directionY * projectile.knockback;
   }
 
-  updateEffects(deltaTime) {
+  updateEffects(deltaTime: number): void {
     this.effects = this.effects
       .map((effect) => ({
         ...effect,
@@ -598,7 +648,7 @@ export class Game {
       .filter((effect) => effect.age < effect.duration);
   }
 
-  bounceOffWall(character, arena) {
+  bounceOffWall(character: RuntimeCharacter, arena: ArenaBounds): void {
     if (arena.shape === 'circle') {
       const normal = getWallNormal(character, arena);
       const dot = character.velocityX * normal.x + character.velocityY * normal.y;
@@ -628,7 +678,7 @@ export class Game {
     }
   }
 
-  draw() {
+  draw(): void {
     const { ctx, canvas } = this;
 
     ctx.save();
@@ -641,21 +691,12 @@ export class Game {
     ctx.fillStyle = '#0a0f1c';
     ctx.fillRect(-10, -10, canvas.width + 20, canvas.height + 20);
 
-    const arenaShape = this.settings?.arenaShape ?? 'square';
-    drawArena(ctx, canvas, arenaShape);
+    drawArena(ctx, canvas, this.getCurrentMap());
 
     ctx.fillStyle = '#f4f7fb';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
     ctx.fillText('Battle Arena', canvas.width / 2, 56);
-
-    if (this.state === GAME_STATES.MENU || !this.settings) {
-      ctx.font = '18px Arial';
-      ctx.fillStyle = '#b8c3d9';
-      ctx.fillText('Select fighters and start a game.', canvas.width / 2, 92);
-      ctx.restore();
-      return;
-    }
 
     for (const projectile of this.projectiles) {
       projectile.draw(ctx);
@@ -684,7 +725,7 @@ export class Game {
     ctx.restore();
   }
 
-  getCharacterImage(character) {
+  getCharacterImage(character: RuntimeCharacter): HTMLImageElement | null {
     const image = character.overrideImage || character.image;
 
     if (!image) {
@@ -694,7 +735,7 @@ export class Game {
     if (this.characterImages.has(image)) {
       const img = this.characterImages.get(image);
 
-      if (img.complete && img.naturalWidth > 0) {
+      if (img?.complete && img.naturalWidth > 0) {
         return img;
       }
 
@@ -708,15 +749,11 @@ export class Game {
     return null;
   }
 
-  getProjectileImage(src) {
-    if (!src) {
-      return null;
-    }
-
+  getProjectileImage(src: string): HTMLImageElement | null {
     if (this.projectileImages.has(src)) {
       const img = this.projectileImages.get(src);
 
-      if (img.complete && img.naturalWidth > 0) {
+      if (img?.complete && img.naturalWidth > 0) {
         return img;
       }
 
@@ -730,7 +767,7 @@ export class Game {
     return null;
   }
 
-  playSound(src) {
+  playSound(src?: string): void {
     if (!src || this.muted) {
       return;
     }
@@ -740,11 +777,13 @@ export class Game {
     }
 
     const audio = this.sounds.get(src);
+    if (!audio) return;
+
     audio.currentTime = 0;
     audio.play().catch(() => {});
   }
 
-  drawFighter(character) {
+  drawFighter(character: RuntimeCharacter): void {
     const { ctx } = this;
 
     this.drawHealthBar(character);
@@ -785,7 +824,7 @@ export class Game {
     ctx.fillText(character.name, character.x, character.y + character.radius + 28);
   }
 
-  drawHealthBar(character) {
+  drawHealthBar(character: RuntimeCharacter): void {
     const { ctx } = this;
     const width = Math.max(72, character.radius * 2.2);
     const height = 8;
@@ -804,7 +843,7 @@ export class Game {
     ctx.strokeRect(x, y, width, height);
   }
 
-  drawRageBar(character) {
+  drawRageBar(character: RuntimeCharacter): void {
     const { ctx } = this;
     const width = Math.max(72, character.radius * 2.2);
     const height = 5;
@@ -818,7 +857,11 @@ export class Game {
     ctx.fillRect(x, y, width * (character.rage / 100), height);
   }
 
-  drawEffect(effect) {
+  drawEffect(effect: Effect): void {
+    if (effect.type === 'impact-ring') {
+      return;
+    }
+
     const { ctx } = this;
     const progress = effect.age / effect.duration;
 
@@ -832,7 +875,7 @@ export class Game {
     ctx.globalAlpha = 1;
   }
 
-  drawImpactRing(effect) {
+  drawImpactRing(effect: Extract<Effect, { type: 'impact-ring' }>): void {
     const { ctx } = this;
     const progress = effect.age / effect.duration;
     const currentRadius = effect.radius * (0.2 + progress * 0.8);
@@ -847,7 +890,7 @@ export class Game {
     ctx.restore();
   }
 
-  drawGameOverOverlay() {
+  drawGameOverOverlay(): void {
     const { ctx, canvas } = this;
     const winner = this.characters.find((character) => character.health > 0);
 
@@ -866,7 +909,7 @@ export class Game {
     }
   }
 
-  drawPausedOverlay() {
+  drawPausedOverlay(): void {
     const { ctx, canvas } = this;
 
     ctx.fillStyle = 'rgba(10, 15, 28, 0.5)';
@@ -878,7 +921,7 @@ export class Game {
     ctx.fillText('PAUSED', canvas.width / 2, canvas.height / 2);
   }
 
-  drawVelocityLine(character) {
+  drawVelocityLine(character: RuntimeCharacter): void {
     const { ctx } = this;
     const length = 40;
     const speed = Math.hypot(character.velocityX, character.velocityY);
@@ -897,9 +940,19 @@ export class Game {
     ctx.lineWidth = 2;
     ctx.stroke();
   }
+
+  getCurrentMap(): MapConfig {
+    const fallback = mapConfigs[0];
+
+    if (!this.settings) {
+      return fallback;
+    }
+
+    return getMapConfig(this.settings.arenaShape) ?? fallback;
+  }
 }
 
-function createVelocity(directionX, directionY, speed) {
+function createVelocity(directionX: number, directionY: number, speed: number): { velocityX: number; velocityY: number } {
   const length = Math.hypot(directionX, directionY);
 
   return {
@@ -908,7 +961,7 @@ function createVelocity(directionX, directionY, speed) {
   };
 }
 
-function getDirection(from, to) {
+function getDirection(from: Vector, to: Vector): Vector {
   const dx = to.x - from.x;
   const dy = to.y - from.y;
   const distance = Math.hypot(dx, dy) || 1;

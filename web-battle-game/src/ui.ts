@@ -1,18 +1,18 @@
-import { ARENA_SHAPES, CHARACTER_IDS } from './config.js';
+import { CHARACTER_IDS } from './config.js';
 import { characterConfigs } from './characters/index.js';
+import { mapConfigs } from './maps/index.js';
+import type { CharacterConfig, GameResult, GameSettings, RuntimeCharacter } from './types.js';
 
-export function getCharacters() {
+export function getCharacters(): CharacterConfig[] {
   return characterConfigs;
 }
 
-export function createStartMenu(container, characterList, { onStart }) {
+export function createStartMenu(container: HTMLElement, characterList: HTMLElement, { onStart }: { onStart: (settings: GameSettings) => void }): void {
   container.innerHTML = `
     <div class="field">
-      <label for="arena-shape">Arena shape</label>
-      <select id="arena-shape" aria-label="Select arena shape">
-        ${Object.entries(ARENA_SHAPES)
-          .map(([value, label]) => `<option value="${value}">${label}</option>`)
-          .join('')}
+      <label for="arena-shape">Arena map</label>
+      <select id="arena-shape" aria-label="Select arena map">
+        ${mapConfigs.map((map) => `<option value="${map.id}">${map.name}</option>`).join('')}
       </select>
     </div>
 
@@ -43,14 +43,14 @@ export function createStartMenu(container, characterList, { onStart }) {
     </section>
   `;
 
-  const arenaShape = container.querySelector('#arena-shape');
-  const playerOne = container.querySelector('#player-one');
-  const playerTwo = container.querySelector('#player-two');
-  const startButton = container.querySelector('#start-button');
-  const message = container.querySelector('#menu-message');
+  const arenaShape = requiredElement<HTMLSelectElement>(container, '#arena-shape');
+  const playerOne = requiredElement<HTMLSelectElement>(container, '#player-one');
+  const playerTwo = requiredElement<HTMLSelectElement>(container, '#player-two');
+  const startButton = requiredElement<HTMLButtonElement>(container, '#start-button');
+  const message = requiredElement<HTMLElement>(container, '#menu-message');
 
-  function updateSelectedCards() {
-    const cards = characterList.querySelectorAll('.character-card');
+  function updateSelectedCards(): void {
+    const cards = characterList.querySelectorAll<HTMLElement>('.character-card');
 
     for (const card of cards) {
       card.classList.toggle('is-player-one', card.dataset.characterId === playerOne.value);
@@ -78,7 +78,7 @@ export function createStartMenu(container, characterList, { onStart }) {
   updateSelectedCards();
 }
 
-export function showGameOver(container, result, { onPlayAgain, onReturnToMenu }) {
+export function showGameOver(container: HTMLElement, result: GameResult, { onPlayAgain, onReturnToMenu }: { onPlayAgain: () => void; onReturnToMenu: () => void }): void {
   container.innerHTML = `
     <section class="game-over">
       <h2>Game Over</h2>
@@ -96,11 +96,11 @@ export function showGameOver(container, result, { onPlayAgain, onReturnToMenu })
     </section>
   `;
 
-  container.querySelector('#play-again-button').addEventListener('click', onPlayAgain);
-  container.querySelector('#return-menu-button').addEventListener('click', onReturnToMenu);
+  requiredElement<HTMLButtonElement>(container, '#play-again-button').addEventListener('click', onPlayAgain);
+  requiredElement<HTMLButtonElement>(container, '#return-menu-button').addEventListener('click', onReturnToMenu);
 }
 
-export function showPlayingUI(container, { onPause, onMute, onStop }) {
+export function showPlayingUI(container: HTMLElement, { onPause, onMute, onStop }: { onPause: () => void; onMute: () => void; onStop: () => void }): void {
   const pauseBtn = document.getElementById('pause-button');
   const muteBtn = document.getElementById('mute-button');
   const stopBtn = document.getElementById('stop-button');
@@ -111,8 +111,7 @@ export function showPlayingUI(container, { onPause, onMute, onStop }) {
     pauseBtn.setAttribute('aria-pressed', 'false');
 
     pauseBtn.replaceWith(pauseBtn.cloneNode(true));
-    const newPause = document.getElementById('pause-button');
-    newPause.addEventListener('click', onPause);
+    document.getElementById('pause-button')?.addEventListener('click', onPause);
   }
 
   if (muteBtn) {
@@ -121,40 +120,30 @@ export function showPlayingUI(container, { onPause, onMute, onStop }) {
     muteBtn.setAttribute('aria-pressed', 'false');
 
     muteBtn.replaceWith(muteBtn.cloneNode(true));
-    const newMute = document.getElementById('mute-button');
-    newMute.addEventListener('click', onMute);
+    document.getElementById('mute-button')?.addEventListener('click', onMute);
   }
 
   if (stopBtn) {
     stopBtn.removeAttribute('hidden');
 
     stopBtn.replaceWith(stopBtn.cloneNode(true));
-    const newStop = document.getElementById('stop-button');
-    newStop.addEventListener('click', onStop);
+    document.getElementById('stop-button')?.addEventListener('click', onStop);
   }
 
   container.innerHTML = '';
 }
 
-export function hideGameUI(container) {
-  const pauseBtn = document.getElementById('pause-button');
-  const muteBtn = document.getElementById('mute-button');
-  const stopBtn = document.getElementById('stop-button');
+export function hideGameUI(container: HTMLElement): void {
+  const pauseBtn = document.getElementById('pause-button') as HTMLButtonElement | null;
+  const muteBtn = document.getElementById('mute-button') as HTMLButtonElement | null;
+  const stopBtn = document.getElementById('stop-button') as HTMLButtonElement | null;
 
-  if (pauseBtn) {
-    pauseBtn.hidden = true;
-  }
-
-  if (muteBtn) {
-    muteBtn.hidden = true;
-  }
-
-  if (stopBtn) {
-    stopBtn.hidden = true;
-  }
+  if (pauseBtn) pauseBtn.hidden = true;
+  if (muteBtn) muteBtn.hidden = true;
+  if (stopBtn) stopBtn.hidden = true;
 }
 
-export function renderMatchStatus(container, characters = []) {
+export function renderMatchStatus(container: HTMLElement, characters: RuntimeCharacter[] = []): void {
   if (!characters.length) {
     container.innerHTML = '';
     return;
@@ -163,7 +152,7 @@ export function renderMatchStatus(container, characters = []) {
   container.innerHTML = characters.map(matchStatusCard).join('');
 }
 
-function characterOptions(selectedId) {
+function characterOptions(selectedId: string): string {
   return characterConfigs
     .map((character) => {
       const selected = character.id === selectedId ? ' selected' : '';
@@ -172,7 +161,7 @@ function characterOptions(selectedId) {
     .join('');
 }
 
-function characterCard(character) {
+function characterCard(character: CharacterConfig): string {
   return `
     <article class="character-card" data-character-id="${character.id}">
       <div class="character-avatar" style="--character-color: ${character.color}; --accent-color: ${character.accentColor}">
@@ -193,7 +182,7 @@ function characterCard(character) {
   `;
 }
 
-function matchStatusCard(character) {
+function matchStatusCard(character: RuntimeCharacter): string {
   const healthRatio = character.health / character.maxHealth;
   const manaRatio = character.rage / 100;
 
@@ -214,7 +203,7 @@ function matchStatusCard(character) {
   `;
 }
 
-function characterStats(character) {
+function characterStats(character: RuntimeCharacter): string {
   return `
     <article class="stat-card">
       <h4>${character.name}</h4>
@@ -225,4 +214,14 @@ function characterStats(character) {
       </dl>
     </article>
   `;
+}
+
+function requiredElement<T extends Element>(parent: ParentNode, selector: string): T {
+  const element = parent.querySelector<T>(selector);
+
+  if (!element) {
+    throw new Error(`Missing element: ${selector}`);
+  }
+
+  return element;
 }
