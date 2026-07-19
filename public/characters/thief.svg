@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="120" viewBox="0 0 96 120" role="img" aria-label="Thief">
+  <rect width="96" height="120" rx="18" fill="none"/>
+  <circle cx="48" cy="33" r="20" fill="#d9a066"/>
+  <path d="M28 28c6-16 34-16 40 0v13H28z" fill="#20242f"/>
+  <rect x="29" y="56" width="38" height="48" rx="12" fill="#3b4252"/>
+  <path d="M29 68h38M29 82h38" stroke="#e5e7eb" stroke-width="5" opacity=".8"/>
+  <path d="M29 104h14v12H29zm24 0h14v12H53z" fill="#191d28"/>
+  <path d="M18 62h13v33H18zm47 0h13v33H65z" fill="#d9a066"/>
+  <rect x="30" y="32" width="36" height="10" rx="5" fill="#111827"/>
+  <circle cx="40" cy="37" r="2" fill="#fff"/>
+  <circle cx="56" cy="37" r="2" fill="#fff"/>
+</svg>

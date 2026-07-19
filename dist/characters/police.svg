@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="120" viewBox="0 0 96 120" role="img" aria-label="Police">
+  <rect width="96" height="120" rx="18" fill="none"/>
+  <circle cx="48" cy="32" r="20" fill="#f1c27d"/>
+  <path d="M25 30h46l-7-16H32z" fill="#263b73"/>
+  <rect x="26" y="56" width="44" height="48" rx="12" fill="#2456a6"/>
+  <rect x="40" y="56" width="16" height="48" fill="#1b376b" opacity=".55"/>
+  <circle cx="48" cy="73" r="7" fill="#f6d365"/>
+  <path d="M30 104h14v12H30zm22 0h14v12H52z" fill="#18233f"/>
+  <path d="M22 61h12v34H22zm40 0h12v34H62z" fill="#f1c27d"/>
+  <path d="M34 31h28" stroke="#111827" stroke-width="3" stroke-linecap="round"/>
+</svg>
