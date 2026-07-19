@@ -20,4 +20,5 @@ export const CHARACTER_IDS = {
   thief: 'thief',
   firefighter: 'firefighter',
   cowboy: 'cowboy',
+  cr7: 'cr7',
 };

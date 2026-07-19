@@ -1,8 +1,10 @@
 import { Game } from './game.js';
-import { createStartMenu, showGameOver, showPlayingUI, hideGameUI } from './ui.js';
+import { createStartMenu, showGameOver, showPlayingUI, hideGameUI, renderMatchStatus } from './ui.js';
 
 const canvas = document.querySelector('#game-canvas');
 const menu = document.querySelector('#start-menu');
+const characterList = document.querySelector('#character-list');
+const matchStatus = document.querySelector('#match-status');
 
 let lastSettings = null;
 
@@ -15,6 +17,7 @@ const game = new Game(canvas, {
         showPlayingUI(menu, {
           onPause: () => game.togglePause(),
           onMute: () => game.toggleMute(),
+          onStop: stopGame,
         });
       },
       onReturnToMenu: () => {
@@ -39,11 +42,13 @@ const game = new Game(canvas, {
       muteBtn.setAttribute('aria-pressed', String(isMuted));
     }
   },
+  onStatusChange: (characters) => renderMatchStatus(matchStatus, characters),
 });
 
 function renderMenu() {
   hideGameUI(menu);
-  createStartMenu(menu, {
+  renderMatchStatus(matchStatus);
+  createStartMenu(menu, characterList, {
     onStart: (settings) => {
       lastSettings = settings;
       game.start(settings);
@@ -51,9 +56,15 @@ function renderMenu() {
       showPlayingUI(menu, {
         onPause: () => game.togglePause(),
         onMute: () => game.toggleMute(),
+        onStop: stopGame,
       });
     },
   });
+}
+
+function stopGame() {
+  game.returnToMenu();
+  renderMenu();
 }
 
 window.addEventListener('resize', () => game.render());

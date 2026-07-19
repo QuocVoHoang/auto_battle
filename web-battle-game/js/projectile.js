@@ -1,5 +1,5 @@
 export class Projectile {
-  constructor({ x, y, velocityX, velocityY, radius, damage, owner, type, label, color, knockback = 0, shape = 'circle', img = null }) {
+  constructor({ x, y, velocityX, velocityY, radius, damage, owner, type, label, color, knockback = 0, shape = 'circle', img = null, isNormalAttack = false }) {
     this.x = x;
     this.y = y;
     this.velocityX = velocityX;
@@ -14,6 +14,7 @@ export class Projectile {
     this.shape = shape;
     this.active = true;
     this.img = img;
+    this.isNormalAttack = isNormalAttack;
   }
 
   update(deltaTime) {

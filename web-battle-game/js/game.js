@@ -8,17 +8,18 @@ import {
   isInsideArena,
 } from './arena.js';
 import { getCharacterConfig } from './characters/index.js';
-import { applyDamage, handleContactAttacks } from './combat.js';
+import { applyDamage, gainRage, handleContactAttacks } from './combat.js';
 import { circlesOverlap } from './collision.js';
 import { Projectile } from './projectile.js';
 
 export class Game {
-  constructor(canvas, { onGameOver, onPauseToggle, onMuteToggle } = {}) {
+  constructor(canvas, { onGameOver, onPauseToggle, onMuteToggle, onStatusChange } = {}) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
     this.onGameOver = onGameOver;
     this.onPauseToggle = onPauseToggle;
     this.onMuteToggle = onMuteToggle;
+    this.onStatusChange = onStatusChange;
     this.state = GAME_STATES.MENU;
     this.paused = false;
     this.muted = false;
@@ -59,6 +60,7 @@ export class Game {
     this.shakeY = 0;
     this.shakeIntensity = 0;
     this.createCharacters();
+    this.notifyStatusChange();
     this.startLoop();
   }
 
@@ -73,6 +75,7 @@ export class Game {
     this.shakeX = 0;
     this.shakeY = 0;
     this.shakeIntensity = 0;
+    this.notifyStatusChange();
     this.draw();
   }
 
@@ -104,6 +107,12 @@ export class Game {
     this.draw();
   }
 
+  notifyStatusChange() {
+    if (this.onStatusChange) {
+      this.onStatusChange(this.characters);
+    }
+  }
+
   startLoop() {
     this.stopLoop();
     this.lastFrameTime = performance.now();
@@ -131,6 +140,7 @@ export class Game {
     if (!this.paused) {
       this.update(deltaTime, time);
       this.updateShake(deltaTime);
+      this.notifyStatusChange();
     }
 
     this.draw();
@@ -180,6 +190,8 @@ export class Game {
       health: config.maxHealth,
       rage: 0,
       nextAttackTime: 0,
+      overrideImage: null,
+      overrideImageUntil: 0,
       stats: {
         normalAttacksLanded: 0,
         specialSkillsUsed: 0,
@@ -194,6 +206,7 @@ export class Game {
     }
 
     const arena = getArenaBounds(this.canvas, this.settings.arenaShape);
+    this.updateTemporaryImages(time);
 
     for (const character of this.characters) {
       if (character.health <= 0) {
@@ -241,7 +254,12 @@ export class Game {
       return;
     }
 
-    this.activateReadySpecials();
+    this.activateReadySpecials(time);
+
+    if (this.endIfNeeded()) {
+      return;
+    }
+
     this.updateEffects(deltaTime);
   }
 
@@ -267,6 +285,11 @@ export class Game {
   }
 
   handleRangedNormalAttack(attacker, defender, time) {
+    if (attacker.normalProjectile) {
+      this.fireNormalProjectile(attacker, defender, time);
+      return;
+    }
+
     const damageDealt = handleContactAttacks(attacker, defender, time, this.effects);
 
     if (damageDealt <= 0) {
@@ -289,6 +312,37 @@ export class Game {
     this.playSound(attacker.normalSound);
   }
 
+  fireNormalProjectile(attacker, defender, time) {
+    if (attacker.health <= 0 || defender.health <= 0 || time < attacker.nextAttackTime) {
+      return;
+    }
+
+    const projectile = attacker.normalProjectile;
+    const direction = getDirection(attacker, defender);
+    const spawnDistance = attacker.radius + projectile.radius + 6;
+    const projectileImg = projectile.image ? this.getProjectileImage(projectile.image) : null;
+
+    attacker.nextAttackTime = time + attacker.attackCooldown;
+    this.playSound(attacker.normalSound);
+
+    this.projectiles.push(new Projectile({
+      x: attacker.x + direction.x * spawnDistance,
+      y: attacker.y + direction.y * spawnDistance,
+      velocityX: direction.x * projectile.speed,
+      velocityY: direction.y * projectile.speed,
+      radius: projectile.radius,
+      damage: attacker.normalDamage,
+      owner: attacker.id,
+      type: projectile.type,
+      label: projectile.label,
+      color: projectile.color,
+      knockback: projectile.knockback,
+      shape: projectile.shape,
+      img: projectileImg,
+      isNormalAttack: true,
+    }));
+  }
+
   updateProjectiles(deltaTime, arena) {
     for (const projectile of this.projectiles) {
       projectile.update(deltaTime);
@@ -309,6 +363,17 @@ export class Game {
 
         const damageDealt = applyDamage(character, projectile.damage);
         this.addDamageToOwner(projectile.owner, damageDealt);
+
+        if (projectile.isNormalAttack && damageDealt > 0) {
+          const owner = this.characters.find((candidate) => candidate.id === projectile.owner);
+
+          this.addNormalHitToOwner(projectile.owner);
+          if (owner) {
+            gainRage(owner, 20);
+          }
+          gainRage(character, 10);
+        }
+
         this.applyKnockback(character, projectile);
         projectile.active = false;
 
@@ -351,7 +416,15 @@ export class Game {
     }
   }
 
-  activateReadySpecials() {
+  addNormalHitToOwner(ownerId) {
+    const owner = this.characters.find((character) => character.id === ownerId);
+
+    if (owner) {
+      owner.stats.normalAttacksLanded += 1;
+    }
+  }
+
+  activateReadySpecials(time) {
     const [left, right] = this.characters;
 
     for (const character of this.characters) {
@@ -367,16 +440,27 @@ export class Game {
 
       character.rage = 0;
       character.stats.specialSkillsUsed += 1;
-      this.fireSpecial(character, target);
+      this.fireSpecial(character, target, time);
     }
   }
 
-  fireSpecial(character, target) {
+  fireSpecial(character, target, time) {
     const direction = getDirection(character, target);
     const skill = character.special;
-    const spawnDistance = character.radius + skill.radius + 6;
 
     this.playSound(skill.sound);
+
+    if (skill.avatarImage) {
+      character.overrideImage = skill.avatarImage;
+      character.overrideImageUntil = time + (skill.avatarDuration ?? 900);
+    }
+
+    if (skill.guaranteedHit) {
+      this.applyGuaranteedSpecial(character, target, skill);
+      return;
+    }
+
+    const spawnDistance = character.radius + skill.radius + 6;
 
     const projectileImg = skill.image ? this.getProjectileImage(skill.image) : null;
 
@@ -417,6 +501,51 @@ export class Game {
     });
   }
 
+  applyGuaranteedSpecial(character, target, skill) {
+    const damageDealt = applyDamage(target, character.specialDamage);
+    character.stats.totalDamageDealt += damageDealt;
+    this.applyKnockback(target, { ...skill, velocityX: target.x - character.x, velocityY: target.y - character.y });
+
+    this.effects.push({
+      text: `-${damageDealt}`,
+      label: skill.label,
+      x: target.x,
+      y: target.y - target.radius,
+      age: 0,
+      duration: 0.7,
+      color: skill.color,
+    });
+
+    this.effects.push({
+      type: 'impact-ring',
+      x: target.x,
+      y: target.y,
+      age: 0,
+      duration: 0.35,
+      color: skill.color,
+      radius: target.radius * 1.4,
+    });
+
+    this.effects.push({
+      text: character.specialSkill,
+      label: skill.flash,
+      x: character.x,
+      y: character.y - character.radius,
+      age: 0,
+      duration: 0.6,
+      color: skill.color,
+    });
+  }
+
+  updateTemporaryImages(time) {
+    for (const character of this.characters) {
+      if (character.overrideImage && time >= character.overrideImageUntil) {
+        character.overrideImage = null;
+        character.overrideImageUntil = 0;
+      }
+    }
+  }
+
   endIfNeeded() {
     const loser = this.characters.find((character) => character.health <= 0);
 
@@ -435,6 +564,7 @@ export class Game {
     this.projectiles = [];
 
     this.draw();
+    this.notifyStatusChange();
 
     if (this.onGameOver) {
       this.onGameOver({
@@ -527,8 +657,6 @@ export class Game {
       return;
     }
 
-    this.drawHud();
-
     for (const projectile of this.projectiles) {
       projectile.draw(ctx);
     }
@@ -556,63 +684,15 @@ export class Game {
     ctx.restore();
   }
 
-  drawHud() {
-    const { ctx, canvas } = this;
-    const [left, right] = this.characters;
-
-    ctx.font = 'bold 16px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillStyle = '#f4f7fb';
-    ctx.fillText(left.name, canvas.width / 2 - 210, 86);
-    ctx.fillText(right.name, canvas.width / 2 + 210, 86);
-
-    this.drawHudHealthBar(left, canvas.width / 2 - 260, 92, left.health / left.maxHealth, '#50e38a');
-    this.drawHudHealthBar(right, canvas.width / 2 + 90, 92, right.health / right.maxHealth, '#50e38a');
-
-    ctx.font = '12px Arial';
-    ctx.fillStyle = '#b8c3d9';
-    ctx.fillText(`${left.health}/${left.maxHealth}`, canvas.width / 2 - 210, 104);
-    ctx.fillText(`${right.health}/${right.maxHealth}`, canvas.width / 2 + 210, 104);
-
-    this.drawHudRageBar(left, canvas.width / 2 - 260, 110);
-    this.drawHudRageBar(right, canvas.width / 2 + 90, 110);
-  }
-
-  drawHudHealthBar(character, x, y, ratio, color) {
-    const { ctx } = this;
-    const width = 170;
-    const height = 10;
-
-    ctx.fillStyle = '#2a3652';
-    ctx.fillRect(x, y, width, height);
-
-    ctx.fillStyle = ratio > 0.35 ? color : '#ff5a4f';
-    ctx.fillRect(x, y, width * Math.max(0, ratio), height);
-
-    ctx.strokeStyle = '#f4f7fb';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(x, y, width, height);
-  }
-
-  drawHudRageBar(character, x, y) {
-    const { ctx } = this;
-    const width = 170;
-    const height = 6;
-
-    ctx.fillStyle = '#2a3652';
-    ctx.fillRect(x, y, width, height);
-
-    ctx.fillStyle = character.accentColor;
-    ctx.fillRect(x, y, width * (character.rage / 100), height);
-  }
-
   getCharacterImage(character) {
-    if (!character.image) {
+    const image = character.overrideImage || character.image;
+
+    if (!image) {
       return null;
     }
 
-    if (this.characterImages.has(character.id)) {
-      const img = this.characterImages.get(character.id);
+    if (this.characterImages.has(image)) {
+      const img = this.characterImages.get(image);
 
       if (img.complete && img.naturalWidth > 0) {
         return img;
@@ -622,8 +702,8 @@ export class Game {
     }
 
     const img = new Image();
-    img.src = character.image;
-    this.characterImages.set(character.id, img);
+    img.src = image;
+    this.characterImages.set(image, img);
 
     return null;
   }

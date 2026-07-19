@@ -5,7 +5,7 @@ export function getCharacters() {
   return characterConfigs;
 }
 
-export function createStartMenu(container, { onStart }) {
+export function createStartMenu(container, characterList, { onStart }) {
   container.innerHTML = `
     <div class="field">
       <label for="arena-shape">Arena shape</label>
@@ -32,7 +32,9 @@ export function createStartMenu(container, { onStart }) {
 
     <button id="start-button" type="button">Start Game</button>
     <div id="menu-message" class="message" aria-live="polite"></div>
+  `;
 
+  characterList.innerHTML = `
     <section class="character-info" aria-label="Character information">
       <h2>Character Legend</h2>
       <div class="character-cards">
@@ -48,7 +50,7 @@ export function createStartMenu(container, { onStart }) {
   const message = container.querySelector('#menu-message');
 
   function updateSelectedCards() {
-    const cards = container.querySelectorAll('.character-card');
+    const cards = characterList.querySelectorAll('.character-card');
 
     for (const card of cards) {
       card.classList.toggle('is-player-one', card.dataset.characterId === playerOne.value);
@@ -98,9 +100,10 @@ export function showGameOver(container, result, { onPlayAgain, onReturnToMenu })
   container.querySelector('#return-menu-button').addEventListener('click', onReturnToMenu);
 }
 
-export function showPlayingUI(container, { onPause, onMute }) {
+export function showPlayingUI(container, { onPause, onMute, onStop }) {
   const pauseBtn = document.getElementById('pause-button');
   const muteBtn = document.getElementById('mute-button');
+  const stopBtn = document.getElementById('stop-button');
 
   if (pauseBtn) {
     pauseBtn.removeAttribute('hidden');
@@ -122,12 +125,21 @@ export function showPlayingUI(container, { onPause, onMute }) {
     newMute.addEventListener('click', onMute);
   }
 
+  if (stopBtn) {
+    stopBtn.removeAttribute('hidden');
+
+    stopBtn.replaceWith(stopBtn.cloneNode(true));
+    const newStop = document.getElementById('stop-button');
+    newStop.addEventListener('click', onStop);
+  }
+
   container.innerHTML = '';
 }
 
 export function hideGameUI(container) {
   const pauseBtn = document.getElementById('pause-button');
   const muteBtn = document.getElementById('mute-button');
+  const stopBtn = document.getElementById('stop-button');
 
   if (pauseBtn) {
     pauseBtn.hidden = true;
@@ -136,6 +148,19 @@ export function hideGameUI(container) {
   if (muteBtn) {
     muteBtn.hidden = true;
   }
+
+  if (stopBtn) {
+    stopBtn.hidden = true;
+  }
+}
+
+export function renderMatchStatus(container, characters = []) {
+  if (!characters.length) {
+    container.innerHTML = '';
+    return;
+  }
+
+  container.innerHTML = characters.map(matchStatusCard).join('');
 }
 
 function characterOptions(selectedId) {
@@ -164,6 +189,27 @@ function characterCard(character) {
         <div><dt>Special</dt><dd>${character.specialSkill} (${character.specialDamage})</dd></div>
         <div><dt>Special effect</dt><dd>${character.special.knockback ? `${character.special.knockback} knockback` : 'Fast projectile'}</dd></div>
       </dl>
+    </article>
+  `;
+}
+
+function matchStatusCard(character) {
+  const healthRatio = character.health / character.maxHealth;
+  const manaRatio = character.rage / 100;
+
+  return `
+    <article class="match-status-card">
+      <h3>${character.name}</h3>
+      <div class="match-meter">
+        <span>HP</span>
+        <strong>${character.health}/${character.maxHealth}</strong>
+        <div class="match-meter-track"><div class="match-meter-fill health" style="width: ${Math.max(0, healthRatio) * 100}%"></div></div>
+      </div>
+      <div class="match-meter">
+        <span>Mana</span>
+        <strong>${character.rage}/100</strong>
+        <div class="match-meter-track"><div class="match-meter-fill mana" style="width: ${manaRatio * 100}%; --mana-color: ${character.accentColor}"></div></div>
+      </div>
     </article>
   `;
 }
