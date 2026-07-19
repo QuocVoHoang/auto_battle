@@ -22,7 +22,7 @@ import type {
   GameState,
   MapConfig,
   RuntimeCharacter,
-  SpecialConfig,
+  UltimateAttackConfig,
   Vector,
 } from './types.js';
 
@@ -234,7 +234,7 @@ export class Game {
       overrideImageUntil: 0,
       stats: {
         normalAttacksLanded: 0,
-        specialSkillsUsed: 0,
+        ultimateAttacksUsed: 0,
         totalDamageDealt: 0,
       },
     };
@@ -269,17 +269,17 @@ export class Game {
     }
 
     if (circlesOverlap(left, right)) {
-      if (!left.normalRange) this.handleNormalAttack(left, right, time);
-      if (!right.normalRange) this.handleNormalAttack(right, left, time);
+      if (!left.normalAttack.range) this.handleNormalAttack(left, right, time);
+      if (!right.normalAttack.range) this.handleNormalAttack(right, left, time);
     }
 
     for (const character of [left, right]) {
-      if (character.health <= 0 || !character.normalRange) continue;
+      if (character.health <= 0 || !character.normalAttack.range) continue;
       const target = character === left ? right : left;
       if (target.health <= 0) continue;
       const dx = target.x - character.x;
       const dy = target.y - character.y;
-      if (Math.hypot(dx, dy) <= character.normalRange) {
+      if (Math.hypot(dx, dy) <= character.normalAttack.range) {
         this.handleRangedNormalAttack(character, target, time);
       }
     }
@@ -298,7 +298,7 @@ export class Game {
       return;
     }
 
-    this.activateReadySpecials(time);
+    this.activateReadyUltimates(time);
 
     if (this.endIfNeeded()) {
       return;
@@ -329,7 +329,7 @@ export class Game {
   }
 
   handleRangedNormalAttack(attacker: RuntimeCharacter, defender: RuntimeCharacter, time: number): void {
-    if (attacker.normalProjectile) {
+    if (attacker.normalAttack.projectile) {
       this.fireNormalProjectile(attacker, defender, time);
       return;
     }
@@ -353,21 +353,20 @@ export class Game {
       radius: Math.max(defender.radius, attacker.radius) * 0.6,
     });
 
-    this.playSound(attacker.normalSound);
   }
 
   fireNormalProjectile(attacker: RuntimeCharacter, defender: RuntimeCharacter, time: number): void {
-    if (attacker.health <= 0 || defender.health <= 0 || time < attacker.nextAttackTime || !attacker.normalProjectile) {
+    if (attacker.health <= 0 || defender.health <= 0 || time < attacker.nextAttackTime || !attacker.normalAttack.projectile) {
       return;
     }
 
-    const projectile = attacker.normalProjectile;
+    const projectile = attacker.normalAttack.projectile;
     const direction = getDirection(attacker, defender);
     const spawnDistance = attacker.radius + projectile.radius + 6;
     const projectileImg = projectile.image ? this.getProjectileImage(projectile.image) : null;
 
-    attacker.nextAttackTime = time + attacker.attackCooldown;
-    this.playSound(attacker.normalSound);
+    attacker.nextAttackTime = time + attacker.normalAttack.cooldown;
+    this.playSound(projectile.sound);
 
     this.projectiles.push(new Projectile({
       x: attacker.x + direction.x * spawnDistance,
@@ -375,10 +374,9 @@ export class Game {
       velocityX: direction.x * projectile.speed,
       velocityY: direction.y * projectile.speed,
       radius: projectile.radius,
-      damage: attacker.normalDamage,
+      damage: attacker.normalAttack.damage,
       owner: attacker.id,
-      type: projectile.type,
-      label: projectile.label,
+      label: attacker.normalAttack.name,
       color: projectile.color,
       knockback: projectile.knockback,
       shape: projectile.shape,
@@ -468,7 +466,7 @@ export class Game {
     }
   }
 
-  activateReadySpecials(time: number): void {
+  activateReadyUltimates(time: number): void {
     const [left, right] = this.characters;
 
     if (!left || !right) {
@@ -487,14 +485,14 @@ export class Game {
       }
 
       character.rage = 0;
-      character.stats.specialSkillsUsed += 1;
-      this.fireSpecial(character, target, time);
+      character.stats.ultimateAttacksUsed += 1;
+      this.fireUltimate(character, target, time);
     }
   }
 
-  fireSpecial(character: RuntimeCharacter, target: RuntimeCharacter, time: number): void {
+  fireUltimate(character: RuntimeCharacter, target: RuntimeCharacter, time: number): void {
     const direction = getDirection(character, target);
-    const skill = character.special;
+    const skill = character.ultimateAttack;
 
     this.playSound(skill.sound);
 
@@ -504,37 +502,42 @@ export class Game {
     }
 
     if (skill.guaranteedHit) {
-      this.applyGuaranteedSpecial(character, target, skill);
+      this.applyGuaranteedUltimate(character, target, skill);
       return;
     }
 
-    const spawnDistance = character.radius + skill.radius + 6;
-    const projectileImg = skill.image ? this.getProjectileImage(skill.image) : null;
+    const projectile = skill.projectile;
+
+    if (!projectile) {
+      return;
+    }
+
+    const spawnDistance = character.radius + projectile.radius + 6;
+    const projectileImg = projectile.image ? this.getProjectileImage(projectile.image) : null;
 
     this.projectiles.push(new Projectile({
       x: character.x + direction.x * spawnDistance,
       y: character.y + direction.y * spawnDistance,
-      velocityX: direction.x * skill.speed,
-      velocityY: direction.y * skill.speed,
-      radius: skill.radius,
-      damage: character.specialDamage,
+      velocityX: direction.x * projectile.speed,
+      velocityY: direction.y * projectile.speed,
+      radius: projectile.radius,
+      damage: skill.damage,
       owner: character.id,
-      type: skill.type,
-      label: skill.label,
-      color: skill.color,
-      knockback: skill.knockback,
-      shape: skill.shape,
+      label: skill.name,
+      color: projectile.color,
+      knockback: projectile.knockback,
+      shape: projectile.shape,
       img: projectileImg,
     }));
 
     this.effects.push({
-      text: character.specialSkill,
-      label: skill.flash,
+      text: skill.name,
+      label: skill.name,
       x: character.x + direction.x * (character.radius + 12),
       y: character.y + direction.y * (character.radius + 12),
       age: 0,
       duration: 0.35,
-      color: skill.color,
+      color: projectile.color,
     });
 
     this.effects.push({
@@ -543,24 +546,26 @@ export class Game {
       y: character.y,
       age: 0,
       duration: 0.3,
-      color: skill.color,
+      color: projectile.color,
       radius: character.radius * 1.2,
     });
   }
 
-  applyGuaranteedSpecial(character: RuntimeCharacter, target: RuntimeCharacter, skill: SpecialConfig): void {
-    const damageDealt = applyDamage(target, character.specialDamage);
+  applyGuaranteedUltimate(character: RuntimeCharacter, target: RuntimeCharacter, skill: UltimateAttackConfig): void {
+    const damageDealt = applyDamage(target, skill.damage);
     character.stats.totalDamageDealt += damageDealt;
-    this.applyKnockback(target, { ...skill, velocityX: target.x - character.x, velocityY: target.y - character.y });
+    const knockback = skill.projectile?.knockback ?? 0;
+    const color = skill.projectile?.color ?? character.accentColor;
+    this.applyKnockback(target, { knockback, velocityX: target.x - character.x, velocityY: target.y - character.y });
 
     this.effects.push({
       text: `-${damageDealt}`,
-      label: skill.label,
+      label: skill.name,
       x: target.x,
       y: target.y - target.radius,
       age: 0,
       duration: 0.7,
-      color: skill.color,
+      color,
     });
 
     this.effects.push({
@@ -569,18 +574,18 @@ export class Game {
       y: target.y,
       age: 0,
       duration: 0.35,
-      color: skill.color,
+      color,
       radius: target.radius * 1.4,
     });
 
     this.effects.push({
-      text: character.specialSkill,
-      label: skill.flash,
+      text: skill.name,
+      label: skill.name,
       x: character.x,
       y: character.y - character.radius,
       age: 0,
       duration: 0.6,
-      color: skill.color,
+      color,
     });
   }
 
@@ -692,11 +697,6 @@ export class Game {
     ctx.fillRect(-10, -10, canvas.width + 20, canvas.height + 20);
 
     drawArena(ctx, canvas, this.getCurrentMap());
-
-    ctx.fillStyle = '#f4f7fb';
-    ctx.font = '24px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText('Battle Arena', canvas.width / 2, 56);
 
     for (const projectile of this.projectiles) {
       projectile.draw(ctx);

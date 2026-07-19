@@ -5,7 +5,6 @@ export interface ProjectileOptions extends CircleBody {
   velocityY: number;
   damage: number;
   owner: string;
-  type: string;
   label: string;
   color: string;
   knockback?: number;
@@ -22,7 +21,6 @@ export class Projectile implements CircleBody {
   radius: number;
   damage: number;
   owner: string;
-  type: string;
   label: string;
   color: string;
   knockback: number;
@@ -31,7 +29,7 @@ export class Projectile implements CircleBody {
   img: HTMLImageElement | null;
   isNormalAttack: boolean;
 
-  constructor({ x, y, velocityX, velocityY, radius, damage, owner, type, label, color, knockback = 0, shape = 'circle', img = null, isNormalAttack = false }: ProjectileOptions) {
+  constructor({ x, y, velocityX, velocityY, radius, damage, owner, label, color, knockback = 0, shape = 'circle', img = null, isNormalAttack = false }: ProjectileOptions) {
     this.x = x;
     this.y = y;
     this.velocityX = velocityX;
@@ -39,7 +37,6 @@ export class Projectile implements CircleBody {
     this.radius = radius;
     this.damage = damage;
     this.owner = owner;
-    this.type = type;
     this.label = label;
     this.color = color;
     this.knockback = knockback;

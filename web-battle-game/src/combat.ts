@@ -5,7 +5,7 @@ export function handleContactAttacks(attacker: RuntimeCharacter, defender: Runti
     return 0;
   }
 
-  const damageDealt = applyDamage(defender, attacker.normalDamage);
+  const damageDealt = applyDamage(defender, attacker.normalAttack.damage);
 
   if (damageDealt <= 0) {
     return 0;
@@ -13,11 +13,11 @@ export function handleContactAttacks(attacker: RuntimeCharacter, defender: Runti
 
   gainRage(attacker, 20);
   gainRage(defender, 10);
-  attacker.nextAttackTime = time + attacker.attackCooldown;
+  attacker.nextAttackTime = time + attacker.normalAttack.cooldown;
 
   effects.push({
     text: `-${damageDealt}`,
-    label: attacker.normalAttack,
+    label: attacker.normalAttack.name,
     x: defender.x,
     y: defender.y - defender.radius,
     age: 0,

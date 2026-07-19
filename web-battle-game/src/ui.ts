@@ -19,14 +19,14 @@ export function createStartMenu(container: HTMLElement, characterList: HTMLEleme
     <div class="field">
       <label for="player-one">Player 1 character</label>
       <select id="player-one" aria-label="Select Player 1 character">
-        ${characterOptions(CHARACTER_IDS.police)}
+        ${characterOptions(CHARACTER_IDS.cr7)}
       </select>
     </div>
 
     <div class="field">
       <label for="player-two">Player 2 character</label>
       <select id="player-two" aria-label="Select Player 2 character">
-        ${characterOptions(CHARACTER_IDS.thief)}
+        ${characterOptions(CHARACTER_IDS.firefighter)}
       </select>
     </div>
 
@@ -173,10 +173,10 @@ function characterCard(character: CharacterConfig): string {
         <div><dt>Max health</dt><dd>${character.maxHealth}</dd></div>
         <div><dt>Speed</dt><dd>${character.speed} px/s</dd></div>
         <div><dt>Size</dt><dd>${character.radius}px radius</dd></div>
-        <div><dt>Normal attack</dt><dd>${character.normalAttack} (${character.normalDamage})</dd></div>
-        <div><dt>Cooldown</dt><dd>${character.attackCooldown}ms</dd></div>
-        <div><dt>Special</dt><dd>${character.specialSkill} (${character.specialDamage})</dd></div>
-        <div><dt>Special effect</dt><dd>${character.special.knockback ? `${character.special.knockback} knockback` : 'Fast projectile'}</dd></div>
+        <div><dt>Normal attack</dt><dd>${character.normalAttack.name} (${character.normalAttack.damage})</dd></div>
+        <div><dt>Cooldown</dt><dd>${character.normalAttack.cooldown}ms</dd></div>
+        <div><dt>Ultimate</dt><dd>${character.ultimateAttack.name} (${character.ultimateAttack.damage})</dd></div>
+        <div><dt>Ultimate effect</dt><dd>${character.ultimateAttack.projectile?.knockback ? `${character.ultimateAttack.projectile.knockback} knockback` : 'Fast projectile'}</dd></div>
       </dl>
     </article>
   `;
@@ -209,7 +209,7 @@ function characterStats(character: RuntimeCharacter): string {
       <h4>${character.name}</h4>
       <dl>
         <div><dt>Normal attacks landed</dt><dd>${character.stats.normalAttacksLanded}</dd></div>
-        <div><dt>Special skills used</dt><dd>${character.stats.specialSkillsUsed}</dd></div>
+        <div><dt>Ultimate attacks used</dt><dd>${character.stats.ultimateAttacksUsed}</dd></div>
         <div><dt>Total damage dealt</dt><dd>${character.stats.totalDamageDealt}</dd></div>
       </dl>
     </article>

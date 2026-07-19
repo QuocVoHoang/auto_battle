@@ -5,7 +5,7 @@ import { cowboy } from './cowboy.js';
 import { cr7 } from './cr7.js';
 import type { CharacterConfig } from '../types.js';
 
-export const characterConfigs: CharacterConfig[] = [police, thief, firefighter, cowboy, cr7];
+export const characterConfigs: CharacterConfig[] = [cr7, firefighter, police, thief, cowboy,];
 
 export function getCharacterConfig(id: string): CharacterConfig | undefined {
   return characterConfigs.find((character) => character.id === id);

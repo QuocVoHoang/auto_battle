@@ -38,9 +38,7 @@ body {
 }
 
 .panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  display: grid;
   gap: 12px;
 }
 
@@ -384,10 +382,6 @@ canvas {
 
   .panel {
     position: static;
-  }
-
-  .panel-header {
-    flex-direction: column;
   }
 }
 

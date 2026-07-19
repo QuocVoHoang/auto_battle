@@ -42,8 +42,6 @@ export interface CircleArenaBounds {
 export type ArenaBounds = RectArenaBounds | CircleArenaBounds;
 
 export interface ProjectileConfig {
-  type: string;
-  label: string;
   speed: number;
   radius: number;
   color: string;
@@ -53,9 +51,20 @@ export interface ProjectileConfig {
   sound?: string;
 }
 
-export interface SpecialConfig extends ProjectileConfig {
-  flash: string;
+export interface AttackConfig {
+  name: string;
+  damage: number;
+  cooldown: number;
+  range?: number;
+  projectile?: ProjectileConfig;
+}
+
+export interface UltimateAttackConfig {
+  name: string;
+  damage: number;
+  projectile?: ProjectileConfig;
   guaranteedHit?: boolean;
+  sound?: string;
   avatarImage?: string;
   avatarDuration?: number;
 }
@@ -66,24 +75,17 @@ export interface CharacterConfig {
   maxHealth: number;
   speed: number;
   radius: number;
-  normalAttack: string;
-  normalDamage: number;
-  attackCooldown: number;
-  normalRange?: number;
-  normalSound?: string;
-  normalProjectile?: ProjectileConfig;
-  specialSkill: string;
-  specialDamage: number;
   description: string;
   color: string;
   accentColor: string;
   image?: string;
-  special: SpecialConfig;
+  normalAttack: AttackConfig;
+  ultimateAttack: UltimateAttackConfig;
 }
 
 export interface CharacterStats {
   normalAttacksLanded: number;
-  specialSkillsUsed: number;
+  ultimateAttacksUsed: number;
   totalDamageDealt: number;
 }
 

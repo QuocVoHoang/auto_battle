@@ -1,6 +1,6 @@
 # Web Battle Game
 
-Browser-based 2D auto-battle game. Two AI fighters collide, attack, build rage, and fire special projectiles. TypeScript ES Modules, HTML5 Canvas, no backend.
+Browser-based 2D auto-battle game. Two AI fighters collide, attack, build rage, and fire ultimate attacks. TypeScript ES Modules, HTML5 Canvas, no backend.
 
 ## Run
 
@@ -18,19 +18,19 @@ The browser loads generated files from `dist/`; `dist/` is ignored and recreated
 - Fighters start at opposite sides of the arena and charge at each other
 - Movement is automatic — fighters steer toward each other at their configured speed
 - Colliding fighters deal normal attacks (cooldown-limited), building rage
-- At 100 rage the fighter fires a special projectile toward the opponent
+- At 100 rage the fighter fires an ultimate attack toward the opponent
 - A fighter dies when health reaches 0
 - The survivor wins
 
 ## Characters
 
-| Character | Health | Speed | Radius | Normal Attack | Cooldown | Special |
+| Character | Health | Speed | Radius | Normal Attack | Cooldown | Ultimate |
 |-----------|--------|-------|--------|---------------|----------|---------|
 | Police | 100 | 180 px/s | 30 px | Punch (15) | 800 ms | Spirit Arrow (35, beam) |
 | Thief | 70 | 240 px/s | 25 px | Slash (10) | 600 ms | Shuriken (25, star, knockback 120) |
 | Firefighter | 140 | 140 px/s | 36 px | Slam (20) | 1000 ms | Water Cannon (40, circle, knockback 160) |
 
-### Special Projectile Properties
+### Ultimate Projectile Properties
 
 | Character | Shape | Speed | Radius | Color | Knockback |
 |-----------|-------|-------|--------|-------|-----------|
@@ -41,7 +41,7 @@ The browser loads generated files from `dist/`; `dist/` is ignored and recreated
 ## Combat & Rage System
 
 - **Rage gain**: +20 on landing a normal attack, +10 on receiving one
-- **Rage cap**: 100 (resets to 0 on special use)
+- **Rage cap**: 100 (resets to 0 on ultimate use)
 - **Normal attack cooldown**: per-character config, checked against `performance.now()`
 - **Damage numbers**: floating text at hit location (rise 35 px/s, fade over duration)
 - **Impact rings**: expanding rings on normal attack hits and projectile impacts
@@ -109,20 +109,21 @@ export const foo: CharacterConfig = {
   maxHealth: 100,
   speed: 180,                   // px/s
   radius: 30,                   // px
-  normalAttack: 'Punch',
-  normalDamage: 15,
-  attackCooldown: 800,          // ms
-  specialSkill: 'Fireball',
-  specialDamage: 35,
-  special: {
-    speed: 360,                 // px/s
-    radius: 8,                  // px
-    color: '#facc15',
-    knockback: 0,              // 0 = none
-    shape: 'circle',           // circle | beam | star
-    type: 'projectile',
-    label: 'projectile',
-    flash: 'special',
+  normalAttack: {
+    name: 'Punch',
+    damage: 15,
+    cooldown: 800,              // ms
+  },
+  ultimateAttack: {
+    name: 'Fireball',
+    damage: 35,
+    projectile: {
+      speed: 360,               // px/s
+      radius: 8,                // px
+      color: '#facc15',
+      knockback: 0,             // 0 = none
+      shape: 'circle',          // circle | wide
+    },
   },
 };
 ```
@@ -155,9 +156,9 @@ export const characterConfigs: CharacterConfig[] = [police, thief, firefighter, 
 
 ### Adding Character Images
 
-1. Place PNG/SVG in `images/` folder
-2. Set `image: 'images/foo.png'` in config
-3. Image renders in character card avatar area (see `characterCard` in `ui.js`)
+1. Place PNG/SVG in `assets/characters/`
+2. Set `image: 'assets/characters/foo.png'` in config
+3. Image renders in character card avatar area (see `characterCard` in `src/ui.ts`)
 
 Images are decorative — gameplay is unaffected if absent.
 
@@ -170,12 +171,14 @@ Edit character config files. Key knobs:
 | `maxHealth` | Total HP pool |
 | `speed` | Movement velocity (px/s) |
 | `radius` | Collision size, affects hitbox and separation distance |
-| `normalDamage` | Damage per normal attack hit |
-| `attackCooldown` | Milliseconds between normal attacks |
-| `specialDamage` | Damage from special projectile |
-| `special.speed` | Projectile travel speed (px/s) |
-| `special.radius` | Projectile collision radius |
-| `special.knockback` | Impulse applied on projectile hit (0 = none) |
+| `normalAttack.damage` | Damage per normal attack hit |
+| `normalAttack.cooldown` | Milliseconds between normal attacks |
+| `normalAttack.range` | Optional ranged normal attack distance |
+| `normalAttack.projectile` | Optional projectile for normal attack |
+| `ultimateAttack.damage` | Damage from ultimate attack |
+| `ultimateAttack.projectile.speed` | Projectile travel speed (px/s) |
+| `ultimateAttack.projectile.radius` | Projectile collision radius |
+| `ultimateAttack.projectile.knockback` | Impulse applied on projectile hit (0 = none) |
 
 All configs are read once at game start — edit, refresh browser, play.
 
@@ -209,7 +212,7 @@ Fighters with different speeds/radii behave differently in each shape. Circle ar
 
 1. Start game → fighters appear, move toward each other
 2. Collision → normal attacks fire, rage bars fill, damage numbers appear
-3. Rage 100 → special projectile fires toward opponent
+3. Rage 100 → ultimate attack fires toward opponent
 4. Projectile hits → knockback, damage number, impact ring, screen shake (if knockback > 0)
 5. Health 0 → game-over overlay, stats panel, Play Again works
 6. Pause → overlay drawn, updates freeze, draw still runs
