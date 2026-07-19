@@ -1,0 +1,30 @@
+import { CHARACTER_IDS } from '../config.js';
+
+export const cowboy = {
+  id: CHARACTER_IDS.cowboy,
+  name: 'Cowboy',
+  maxHealth: 950,
+  speed: 155,
+  radius: 30,
+  normalAttack: 'Pistol Shot',
+  normalDamage: 28,
+  attackCooldown: 850,
+  normalRange: 520,
+  specialSkill: 'Train Strike',
+  specialDamage: 210,
+  description: 'Ranged fighter with low-damage pistol shots from distance. Calls a train for devastating damage.',
+  color: '#8B4513',
+  accentColor: '#D2B48C',
+  image: 'cowboy.png',
+  special: {
+    type: 'train',
+    label: 'Train Strike',
+    speed: 520,
+    radius: 32,
+    color: '#8B0000',
+    knockback: 220,
+    shape: 'wide',
+    flash: 'train',
+    image: 'train.png',
+  },
+};
