@@ -14,7 +14,7 @@ export const police = {
   description: 'Balanced fighter with medium baton damage and a fast, accurate pistol shot.',
   color: '#4f8cff',
   accentColor: '#ffe066',
-  image: 'police.png',
+  image: 'assets/characters/police.png',
   special: {
     type: 'pistol',
     label: 'Pistol Shot',

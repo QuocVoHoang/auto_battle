@@ -33,6 +33,7 @@ export class Game {
     this.lastFrameTime = 0;
     this.characterImages = new Map();
     this.projectileImages = new Map();
+    this.sounds = new Map();
   }
 
   start(settings) {
@@ -284,6 +285,8 @@ export class Game {
       color: '#ffffff',
       radius: Math.max(defender.radius, attacker.radius) * 0.6,
     });
+
+    this.playSound(attacker.normalSound);
   }
 
   updateProjectiles(deltaTime, arena) {
@@ -372,6 +375,8 @@ export class Game {
     const direction = getDirection(character, target);
     const skill = character.special;
     const spawnDistance = character.radius + skill.radius + 6;
+
+    this.playSound(skill.sound);
 
     const projectileImg = skill.image ? this.getProjectileImage(skill.image) : null;
 
@@ -643,6 +648,20 @@ export class Game {
     this.projectileImages.set(src, img);
 
     return null;
+  }
+
+  playSound(src) {
+    if (!src || this.muted) {
+      return;
+    }
+
+    if (!this.sounds.has(src)) {
+      this.sounds.set(src, new Audio(src));
+    }
+
+    const audio = this.sounds.get(src);
+    audio.currentTime = 0;
+    audio.play().catch(() => {});
   }
 
   drawFighter(character) {

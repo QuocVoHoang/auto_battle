@@ -14,7 +14,7 @@ export const firefighter = {
   description: 'Largest and toughest fighter. Slow movement, medium spray damage, huge knockback blast.',
   color: '#ff5a4f',
   accentColor: '#66d9ff',
-  image: 'firefighter.png',
+  image: 'assets/characters/firefighter.png',
   special: {
     type: 'water',
     label: 'Powerful Water Blast',

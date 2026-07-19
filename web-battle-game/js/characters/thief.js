@@ -14,7 +14,7 @@ export const thief = {
   description: 'Fastest fighter with low health, quick punches, and a rock that causes small knockback.',
   color: '#b066ff',
   accentColor: '#9b7653',
-  image: 'thief.png',
+  image: 'assets/characters/thief.png',
   special: {
     type: 'rock',
     label: 'Rock Throw',
